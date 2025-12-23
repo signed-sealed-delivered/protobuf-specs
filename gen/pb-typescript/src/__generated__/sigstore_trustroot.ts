@@ -215,6 +215,45 @@ export interface CertificateAuthority {
 }
 
 /**
+ * MTCSigningAuthority describes a Merkle Tree Certificate (MTC) signing authority
+ * that is used to sign MTC subtree roots.
+ */
+export interface MTCSigningAuthority {
+  /**
+   * The URI identifies the certificate authority that operates this
+   * MTC signing key.
+   *
+   * It is RECOMMENDED that the URI is the base URL for the certificate
+   * authority, that can be provided to any SDK/client provided
+   * by the certificate authority to interact with the certificate
+   * authority.
+   */
+  uri: string;
+  /**
+   * The public key used to verify MTC subtree signatures.
+   * This attribute contains the signature algorithm used for signing.
+   */
+  publicKey:
+    | PublicKey
+    | undefined;
+  /**
+   * The time this key was valid. Clients MUST check timestamps against
+   * the `valid_for` time range.
+   *
+   * The TimeRange should be considered valid *inclusive* of the
+   * endpoints.
+   */
+  validFor:
+    | TimeRange
+    | undefined;
+  /**
+   * The name of the operator of this MTC signing authority.
+   * Operator MUST be formatted as a scheme-less URI, e.g. sigstore.dev
+   */
+  operator: string;
+}
+
+/**
  * TrustedRoot describes the client's complete set of trusted entities.
  * How the TrustedRoot is populated is not specified, but can be a
  * combination of many sources such as TUF repositories, files on disk etc.
@@ -271,6 +310,13 @@ export interface TrustedRoot {
   ctlogs: TransparencyLogInstance[];
   /** A set of trusted timestamping authorities. */
   timestampAuthorities: CertificateAuthority[];
+  /**
+   * A set of trusted MTC (Merkle Tree Certificate) signing authorities.
+   * These keys are used to verify signatures on MTC subtree roots.
+   * Only supported for TrustedRoot media types matching or greater than
+   * application/vnd.dev.sigstore.trustedroot.v0.3+json
+   */
+  mtcSigningAuthorities: MTCSigningAuthority[];
 }
 
 /**
@@ -515,6 +561,34 @@ export const CertificateAuthority: MessageFns<CertificateAuthority> = {
   },
 };
 
+export const MTCSigningAuthority: MessageFns<MTCSigningAuthority> = {
+  fromJSON(object: any): MTCSigningAuthority {
+    return {
+      uri: isSet(object.uri) ? globalThis.String(object.uri) : "",
+      publicKey: isSet(object.publicKey) ? PublicKey.fromJSON(object.publicKey) : undefined,
+      validFor: isSet(object.validFor) ? TimeRange.fromJSON(object.validFor) : undefined,
+      operator: isSet(object.operator) ? globalThis.String(object.operator) : "",
+    };
+  },
+
+  toJSON(message: MTCSigningAuthority): unknown {
+    const obj: any = {};
+    if (message.uri !== "") {
+      obj.uri = message.uri;
+    }
+    if (message.publicKey !== undefined) {
+      obj.publicKey = PublicKey.toJSON(message.publicKey);
+    }
+    if (message.validFor !== undefined) {
+      obj.validFor = TimeRange.toJSON(message.validFor);
+    }
+    if (message.operator !== "") {
+      obj.operator = message.operator;
+    }
+    return obj;
+  },
+};
+
 export const TrustedRoot: MessageFns<TrustedRoot> = {
   fromJSON(object: any): TrustedRoot {
     return {
@@ -530,6 +604,9 @@ export const TrustedRoot: MessageFns<TrustedRoot> = {
         : [],
       timestampAuthorities: globalThis.Array.isArray(object?.timestampAuthorities)
         ? object.timestampAuthorities.map((e: any) => CertificateAuthority.fromJSON(e))
+        : [],
+      mtcSigningAuthorities: globalThis.Array.isArray(object?.mtcSigningAuthorities)
+        ? object.mtcSigningAuthorities.map((e: any) => MTCSigningAuthority.fromJSON(e))
         : [],
     };
   },
@@ -550,6 +627,9 @@ export const TrustedRoot: MessageFns<TrustedRoot> = {
     }
     if (message.timestampAuthorities?.length) {
       obj.timestampAuthorities = message.timestampAuthorities.map((e) => CertificateAuthority.toJSON(e));
+    }
+    if (message.mtcSigningAuthorities?.length) {
+      obj.mtcSigningAuthorities = message.mtcSigningAuthorities.map((e) => MTCSigningAuthority.toJSON(e));
     }
     return obj;
   },

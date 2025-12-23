@@ -54,6 +54,13 @@ pub struct VerificationMaterial {
     /// tlog_entries.inclusion_promise.signed_entry_timestamp.
     #[prost(message, optional, tag = "4")]
     pub timestamp_verification_data: ::core::option::Option<TimestampVerificationData>,
+    /// The full public key material, required when using mtc_certificate.
+    /// Since MTC certificates only store a hash of the public key,
+    /// the full key must be provided separately for signature verification.
+    /// This field MUST be populated when content is mtc_certificate.
+    /// This field SHOULD NOT be populated for other content types.
+    #[prost(message, optional, tag = "7")]
+    pub mtc_public_key: ::core::option::Option<super::super::common::v1::PublicKey>,
     /// The key material for verification purposes.
     ///
     /// This allows key material to be conveyed in one of three forms:
@@ -87,7 +94,14 @@ pub struct VerificationMaterial {
     ///
     /// When used in a `0.3` bundle with the PGI and "keyless" signing,
     /// form (3) MUST be used.
-    #[prost(oneof = "verification_material::Content", tags = "1, 2, 5")]
+    ///
+    /// 4. An MTC (Merkle Tree Certificate) which contains a TBSCertificateLogEntry
+    ///     with a public key hash, plus MTCProof containing Merkle inclusion proofs
+    ///     and subtree signatures.
+    ///
+    /// When used in a `0.3+` bundle with the PGI and "keyless" signing with MTC batching,
+    /// form (4) MAY be used.
+    #[prost(oneof = "verification_material::Content", tags = "1, 2, 5, 6")]
     pub content: ::core::option::Option<verification_material::Content>,
 }
 /// Nested message and enum types in `VerificationMaterial`.
@@ -125,6 +139,13 @@ pub mod verification_material {
     ///
     /// When used in a `0.3` bundle with the PGI and "keyless" signing,
     /// form (3) MUST be used.
+    ///
+    /// 4. An MTC (Merkle Tree Certificate) which contains a TBSCertificateLogEntry
+    ///     with a public key hash, plus MTCProof containing Merkle inclusion proofs
+    ///     and subtree signatures.
+    ///
+    /// When used in a `0.3+` bundle with the PGI and "keyless" signing with MTC batching,
+    /// form (4) MAY be used.
     #[derive(
         sigstore_protobuf_specs_derive::Deserialize_proto,
         sigstore_protobuf_specs_derive::Serialize_proto
@@ -137,6 +158,8 @@ pub mod verification_material {
         X509CertificateChain(super::super::super::common::v1::X509CertificateChain),
         #[prost(message, tag = "5")]
         Certificate(super::super::super::common::v1::X509Certificate),
+        #[prost(message, tag = "6")]
+        MtcCertificate(super::super::super::certificate::v1::MtcCertificate),
     }
 }
 #[derive(

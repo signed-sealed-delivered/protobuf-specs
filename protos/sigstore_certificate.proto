@@ -1,0 +1,172 @@
+// Copyright 2025 The Sigstore Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+package dev.sigstore.certificate.v1;
+
+import "google/api/field_behavior.proto";
+import "sigstore_common.proto";
+import "sigstore_rekor.proto";
+
+option go_package = "github.com/sigstore/protobuf-specs/gen/pb-go/certificate/v1";
+option java_package = "dev.sigstore.proto.certificate.v1";
+option java_multiple_files = true;
+option java_outer_classname = "CertificateProto";
+option ruby_package = "Sigstore::Certificate::V1";
+
+// This package defines Merkle Tree Certificate (MTC) related message types for
+// the Sigstore community.
+//
+// MTCs provide a compact alternative to traditional X.509 certificates by batching
+// multiple certificate requests together and protecting them with a subtree signature.
+// Inspiration for this effort comes from recent developments in using MTCs for TLS.
+
+// Extension represents a certificate extension, similar to X.509 extensions.
+// These are used for embedding OIDC claims and other metadata.
+message Extension {
+        // The Object Identifier (OID) for this extension in dotted notation.
+        // See https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md
+        string oid = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // The value of the extension.
+        bytes value = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// TBSCertificateLogEntry is the "To Be Signed" certificate entry.
+//
+// This structure contains the minimal information needed to identify a signing
+// key and its associated identity claims. Instead of storing the full public key,
+// it stores only a hash of the key (32 bytes).
+message TBSCertificateLogEntry {
+        // The subject identity from the OIDC token.
+        string subject = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // Extensions containing additional identity claims from the OIDC token.
+        // See https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md for complete list.
+        repeated Extension extensions = 2;
+
+        // SHA-256 hash of the PKIX-encoded (DER) public key.
+        bytes pub_key_hash = 3 [(google.api.field_behavior) = REQUIRED];
+
+        // Validity period start time (inclusive), as Unix timestamp in seconds.
+        // The certificate is not valid before this time.
+        int64 not_before = 4 [(google.api.field_behavior) = REQUIRED];
+
+        // Validity period end time (inclusive), as Unix timestamp in seconds.
+        // The certificate is not valid after this time.
+        int64 not_after = 5 [(google.api.field_behavior) = REQUIRED];
+}
+
+// SubtreeSignature represents a signature over a Merkle subtree root.
+//
+// In MTC batching, multiple TBSCertificateLogEntry instances are hashed and organized
+// into a Merkle tree. The root of this subtree is signed, and this signature protects
+// all certificates in the batch.
+message SubtreeSignature {
+        // The signature algorithm used.
+        dev.sigstore.common.v1.PublicKeyDetails algorithm = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // The signature over the subtree root.
+        // Signature is computed over: subtree_root || tree_size || log_id
+        // where:
+        //   - subtree_root: 32-byte Merkle tree root hash
+        //   - tree_size: 8-byte big-endian integer (number of leaves)
+        //   - log_id: 32-byte transparency log identifier
+        bytes signature = 2 [(google.api.field_behavior) = REQUIRED];
+
+        // The Merkle subtree root hash that was signed.
+        bytes subtree_root = 3 [(google.api.field_behavior) = REQUIRED];
+
+        // The size of the Merkle tree (number of leaf nodes).
+        int64 tree_size = 4 [(google.api.field_behavior) = REQUIRED];
+
+        // Optional hint to identify which public key should be used for verification.
+        // Current format: SHA-256 hash of the public key (first 8 hex chars)
+        string key_hint = 5;
+}
+
+// MTCProof contains all the cryptographic material needed to verify a Merkle Tree Certificate.
+//
+// Verification requires:
+//   1. Hashing the TBSCertificateLogEntry to compute leaf hash
+//   2. Verifying Merkle inclusion proof against subtree root
+//   3. Verifying subtree signature
+//   4. Verifying Rekor inclusion proof against checkpoint
+//   5. Verifying checkpoint signature
+message MTCProof {
+        // The Merkle inclusion proof showing that this certificate's TBSCertificateLogEntry
+        // is included in the transparency log at the claimed index.
+        dev.sigstore.rekor.v1.InclusionProof inclusion_proof = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // One or more signatures over Merkle subtree roots.
+        //
+        // Verifiers MUST successfully verify at least one signature from a trusted CA
+        // to consider the certificate valid.
+        repeated SubtreeSignature subtree_signatures = 2 [(google.api.field_behavior) = REQUIRED];
+
+        // The signed checkpoint from the transparency log.
+        //
+        // Verifiers MUST verify the checkpoint signature and ensure the root hash
+        // matches the one from the inclusion proof.
+        dev.sigstore.rekor.v1.Checkpoint checkpoint = 3 [(google.api.field_behavior) = REQUIRED];
+
+        // The transparency log identifier.
+        // This is the SHA-256 hash of the log's public key.
+        bytes log_id = 4 [(google.api.field_behavior) = REQUIRED];
+
+        // The UNIX timestamp (seconds since epoch) when the TBSCertificateLogEntry
+        // was integrated into the transparency log.
+        //
+        // This timestamp is provided by Rekor and MUST be within the validity period
+        // of the TBSCertificateLogEntry (between not_before and not_after).
+        int64 integrated_time = 5 [(google.api.field_behavior) = REQUIRED];
+
+        // Proof that this specific certificate is included in the Fulcio batch.
+        //
+        // This is a Merkle inclusion proof showing the path from this certificate's
+        // leaf hash to the subtree root. The subtree root was signed and uploaded
+        // to Rekor.
+        CertificateInclusionProof certificate_inclusion_proof = 6 [(google.api.field_behavior) = REQUIRED];
+
+        // The signature over the subtree root that was uploaded to Rekor in the
+        // hashedrekord entry. This is the signature.content field in the hashedrekord
+        // canonical body.
+        bytes hashedrekord_signature = 7 [(google.api.field_behavior) = REQUIRED];
+
+        // The SHA-256 hash of the DER-encoded Fulcio CA public key that was included
+        // in the hashedrekord entry uploaded to Rekor.
+        bytes hashedrekord_key_id = 8 [(google.api.field_behavior) = REQUIRED];
+}
+
+// CertificateInclusionProof proves that a specific certificate is included in a
+// Fulcio batch by providing the Merkle path from the certificate's leaf hash to
+// the batch's subtree root.
+message CertificateInclusionProof {
+        // The index of this certificate within the batch (0-based).
+        int64 leaf_index = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // The sibling hashes along the path from leaf to root.
+        repeated bytes hashes = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// MTCCertificate represents a complete Merkle Tree Certificate, combining the
+// certificate entry with all verification material.  This enabled clients to
+// verify the information offline, without having to contact fulcio/rekor.
+message MTCCertificate {
+        // The certificate entry that was logged to Rekor.
+        TBSCertificateLogEntry tbs_certificate_log_entry = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // The proof material for verification.
+        MTCProof mtc_proof = 2 [(google.api.field_behavior) = REQUIRED];
+}

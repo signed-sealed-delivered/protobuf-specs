@@ -21,6 +21,7 @@ import "google/api/field_behavior.proto";
 import "envelope.proto";
 import "sigstore_common.proto";
 import "sigstore_rekor.proto";
+import "sigstore_certificate.proto";
 
 option go_package = "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1";
 option java_package = "dev.sigstore.proto.bundle.v1";
@@ -90,10 +91,18 @@ message VerificationMaterial {
         //
         // When used in a `0.3` bundle with the PGI and "keyless" signing,
         // form (3) MUST be used.
+        //
+        // 4. An MTC (Merkle Tree Certificate) which contains a TBSCertificateLogEntry
+        //    with a public key hash, plus MTCProof containing Merkle inclusion proofs
+        //    and subtree signatures.
+        //
+        // When used in a `0.3+` bundle with the PGI and "keyless" signing with MTC batching,
+        // form (4) MAY be used.
         oneof content {
                 dev.sigstore.common.v1.PublicKeyIdentifier public_key = 1 [(google.api.field_behavior) = REQUIRED];
                 dev.sigstore.common.v1.X509CertificateChain x509_certificate_chain = 2 [(google.api.field_behavior) = REQUIRED];
                 dev.sigstore.common.v1.X509Certificate certificate = 5 [(google.api.field_behavior) = REQUIRED];
+                dev.sigstore.certificate.v1.MTCCertificate mtc_certificate = 6 [(google.api.field_behavior) = REQUIRED];
         }
         // An inclusion proof and an optional signed timestamp from the log.
         // Client verification libraries MAY provide an option to support v0.1
@@ -106,6 +115,12 @@ message VerificationMaterial {
         // Timestamp may also come from
         // tlog_entries.inclusion_promise.signed_entry_timestamp.
         TimestampVerificationData timestamp_verification_data = 4;
+        // The full public key material, required when using mtc_certificate.
+        // Since MTC certificates only store a hash of the public key,
+        // the full key must be provided separately for signature verification.
+        // This field MUST be populated when content is mtc_certificate.
+        // This field SHOULD NOT be populated for other content types.
+        dev.sigstore.common.v1.PublicKey mtc_public_key = 7;
 }
 
 message Bundle {
