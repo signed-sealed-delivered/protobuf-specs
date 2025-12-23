@@ -6,8 +6,10 @@
 
 /* eslint-disable */
 import { Envelope } from "./envelope";
+import { MTCCertificate } from "./sigstore_certificate";
 import {
   MessageSignature,
+  PublicKey,
   PublicKeyIdentifier,
   RFC3161SignedTimestamp,
   X509Certificate,
@@ -77,11 +79,19 @@ export interface VerificationMaterial {
    *
    * When used in a `0.3` bundle with the PGI and "keyless" signing,
    * form (3) MUST be used.
+   *
+   * 4. An MTC (Merkle Tree Certificate) which contains a TBSCertificateLogEntry
+   *    with a public key hash, plus MTCProof containing Merkle inclusion proofs
+   *    and subtree signatures.
+   *
+   * When used in a `0.3+` bundle with the PGI and "keyless" signing with MTC batching,
+   * form (4) MAY be used.
    */
   content?:
     | { $case: "publicKey"; publicKey: PublicKeyIdentifier }
     | { $case: "x509CertificateChain"; x509CertificateChain: X509CertificateChain }
     | { $case: "certificate"; certificate: X509Certificate }
+    | { $case: "mtcCertificate"; mtcCertificate: MTCCertificate }
     | undefined;
   /**
    * An inclusion proof and an optional signed timestamp from the log.
@@ -97,7 +107,17 @@ export interface VerificationMaterial {
    * Timestamp may also come from
    * tlog_entries.inclusion_promise.signed_entry_timestamp.
    */
-  timestampVerificationData: TimestampVerificationData | undefined;
+  timestampVerificationData:
+    | TimestampVerificationData
+    | undefined;
+  /**
+   * The full public key material, required when using mtc_certificate.
+   * Since MTC certificates only store a hash of the public key,
+   * the full key must be provided separately for signature verification.
+   * This field MUST be populated when content is mtc_certificate.
+   * This field SHOULD NOT be populated for other content types.
+   */
+  mtcPublicKey: PublicKey | undefined;
 }
 
 export interface Bundle {
@@ -172,6 +192,8 @@ export const VerificationMaterial: MessageFns<VerificationMaterial> = {
         }
         : isSet(object.certificate)
         ? { $case: "certificate", certificate: X509Certificate.fromJSON(object.certificate) }
+        : isSet(object.mtcCertificate)
+        ? { $case: "mtcCertificate", mtcCertificate: MTCCertificate.fromJSON(object.mtcCertificate) }
         : undefined,
       tlogEntries: globalThis.Array.isArray(object?.tlogEntries)
         ? object.tlogEntries.map((e: any) => TransparencyLogEntry.fromJSON(e))
@@ -179,6 +201,7 @@ export const VerificationMaterial: MessageFns<VerificationMaterial> = {
       timestampVerificationData: isSet(object.timestampVerificationData)
         ? TimestampVerificationData.fromJSON(object.timestampVerificationData)
         : undefined,
+      mtcPublicKey: isSet(object.mtcPublicKey) ? PublicKey.fromJSON(object.mtcPublicKey) : undefined,
     };
   },
 
@@ -190,12 +213,17 @@ export const VerificationMaterial: MessageFns<VerificationMaterial> = {
       obj.x509CertificateChain = X509CertificateChain.toJSON(message.content.x509CertificateChain);
     } else if (message.content?.$case === "certificate") {
       obj.certificate = X509Certificate.toJSON(message.content.certificate);
+    } else if (message.content?.$case === "mtcCertificate") {
+      obj.mtcCertificate = MTCCertificate.toJSON(message.content.mtcCertificate);
     }
     if (message.tlogEntries?.length) {
       obj.tlogEntries = message.tlogEntries.map((e) => TransparencyLogEntry.toJSON(e));
     }
     if (message.timestampVerificationData !== undefined) {
       obj.timestampVerificationData = TimestampVerificationData.toJSON(message.timestampVerificationData);
+    }
+    if (message.mtcPublicKey !== undefined) {
+      obj.mtcPublicKey = PublicKey.toJSON(message.mtcPublicKey);
     }
     return obj;
   },

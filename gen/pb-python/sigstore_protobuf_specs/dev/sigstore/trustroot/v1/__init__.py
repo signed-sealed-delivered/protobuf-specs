@@ -194,6 +194,46 @@ class CertificateAuthority(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
+class MtcSigningAuthority(betterproto.Message):
+    """
+    MTCSigningAuthority describes a Merkle Tree Certificate (MTC) signing authority
+     that is used to sign MTC subtree roots.
+    """
+
+    uri: str = betterproto.string_field(1)
+    """
+    The URI identifies the certificate authority that operates this
+     MTC signing key.
+    
+     It is RECOMMENDED that the URI is the base URL for the certificate
+     authority, that can be provided to any SDK/client provided
+     by the certificate authority to interact with the certificate
+     authority.
+    """
+
+    public_key: "__common_v1__.PublicKey" = betterproto.message_field(2)
+    """
+    The public key used to verify MTC subtree signatures.
+     This attribute contains the signature algorithm used for signing.
+    """
+
+    valid_for: "__common_v1__.TimeRange" = betterproto.message_field(3)
+    """
+    The time this key was valid. Clients MUST check timestamps against
+     the `valid_for` time range.
+    
+     The TimeRange should be considered valid *inclusive* of the
+     endpoints.
+    """
+
+    operator: str = betterproto.string_field(4)
+    """
+    The name of the operator of this MTC signing authority.
+     Operator MUST be formatted as a scheme-less URI, e.g. sigstore.dev
+    """
+
+
+@dataclass(eq=False, repr=False)
 class TrustedRoot(betterproto.Message):
     """
     TrustedRoot describes the client's complete set of trusted entities.
@@ -256,6 +296,14 @@ class TrustedRoot(betterproto.Message):
 
     timestamp_authorities: List["CertificateAuthority"] = betterproto.message_field(5)
     """A set of trusted timestamping authorities."""
+
+    mtc_signing_authorities: List["MtcSigningAuthority"] = betterproto.message_field(6)
+    """
+    A set of trusted MTC (Merkle Tree Certificate) signing authorities.
+     These keys are used to verify signatures on MTC subtree roots.
+     Only supported for TrustedRoot media types matching or greater than
+     application/vnd.dev.sigstore.trustedroot.v0.3+json
+    """
 
 
 @dataclass(eq=False, repr=False)
@@ -450,6 +498,7 @@ class ClientTrustConfig(betterproto.Message):
 
 rebuild_dataclass(TransparencyLogInstance)  # type: ignore
 rebuild_dataclass(CertificateAuthority)  # type: ignore
+rebuild_dataclass(MtcSigningAuthority)  # type: ignore
 rebuild_dataclass(TrustedRoot)  # type: ignore
 rebuild_dataclass(SigningConfig)  # type: ignore
 rebuild_dataclass(Service)  # type: ignore

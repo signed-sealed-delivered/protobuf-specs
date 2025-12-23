@@ -127,6 +127,42 @@ pub struct CertificateAuthority {
     #[prost(string, tag = "5")]
     pub operator: ::prost::alloc::string::String,
 }
+/// MTCSigningAuthority describes a Merkle Tree Certificate (MTC) signing authority
+/// that is used to sign MTC subtree roots.
+#[derive(
+    sigstore_protobuf_specs_derive::Deserialize_proto,
+    sigstore_protobuf_specs_derive::Serialize_proto
+)]
+#[derive(::prost_reflect::ReflectMessage)]
+#[prost_reflect(message_name = "dev.sigstore.trustroot.v1.MTCSigningAuthority")]
+#[prost_reflect(file_descriptor_set_bytes = "crate::FILE_DESCRIPTOR_SET_BYTES")]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct MtcSigningAuthority {
+    /// The URI identifies the certificate authority that operates this
+    /// MTC signing key.
+    ///
+    /// It is RECOMMENDED that the URI is the base URL for the certificate
+    /// authority, that can be provided to any SDK/client provided
+    /// by the certificate authority to interact with the certificate
+    /// authority.
+    #[prost(string, tag = "1")]
+    pub uri: ::prost::alloc::string::String,
+    /// The public key used to verify MTC subtree signatures.
+    /// This attribute contains the signature algorithm used for signing.
+    #[prost(message, optional, tag = "2")]
+    pub public_key: ::core::option::Option<super::super::common::v1::PublicKey>,
+    /// The time this key was valid. Clients MUST check timestamps against
+    /// the `valid_for` time range.
+    ///
+    /// The TimeRange should be considered valid *inclusive* of the
+    /// endpoints.
+    #[prost(message, optional, tag = "3")]
+    pub valid_for: ::core::option::Option<super::super::common::v1::TimeRange>,
+    /// The name of the operator of this MTC signing authority.
+    /// Operator MUST be formatted as a scheme-less URI, e.g. sigstore.dev
+    #[prost(string, tag = "4")]
+    pub operator: ::prost::alloc::string::String,
+}
 /// TrustedRoot describes the client's complete set of trusted entities.
 /// How the TrustedRoot is populated is not specified, but can be a
 /// combination of many sources such as TUF repositories, files on disk etc.
@@ -191,6 +227,12 @@ pub struct TrustedRoot {
     /// A set of trusted timestamping authorities.
     #[prost(message, repeated, tag = "5")]
     pub timestamp_authorities: ::prost::alloc::vec::Vec<CertificateAuthority>,
+    /// A set of trusted MTC (Merkle Tree Certificate) signing authorities.
+    /// These keys are used to verify signatures on MTC subtree roots.
+    /// Only supported for TrustedRoot media types matching or greater than
+    /// application/vnd.dev.sigstore.trustedroot.v0.3+json
+    #[prost(message, repeated, tag = "6")]
+    pub mtc_signing_authorities: ::prost::alloc::vec::Vec<MtcSigningAuthority>,
 }
 /// SigningConfig represents the trusted entities/state needed by Sigstore
 /// signing. In particular, it primarily contains service URLs that a Sigstore
