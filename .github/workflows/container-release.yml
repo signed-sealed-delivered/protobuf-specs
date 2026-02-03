@@ -38,7 +38,7 @@ jobs:
       IMAGE_NO_TAG: ghcr.io/${{ github.repository }}-service-builder
 
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
 
@@ -48,7 +48,7 @@ jobs:
         echo "IMAGE_REF=${IMAGE_NO_TAG}:$tag" >> $GITHUB_ENV
     
     - name: Log into ghcr.io
-      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.repository_owner }}
@@ -70,7 +70,7 @@ jobs:
         echo "IMAGE_DIGEST=$image_digest" >> "$GITHUB_ENV"
 
     - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+      uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
       with:
         subject-name: ${{ env.IMAGE_NO_TAG }}
         subject-digest: ${{ env.IMAGE_DIGEST }}
