@@ -147,6 +147,12 @@ pub struct MtcProof {
     /// in the hashedrekord entry uploaded to Rekor.
     #[prost(bytes = "vec", tag = "8")]
     pub hashedrekord_key_id: ::prost::alloc::vec::Vec<u8>,
+    /// The inclusion promise/signed entry timestamp from Rekor.
+    /// This is Rekor's signature over (body, log_index, log_id, integrated_time).
+    #[prost(message, optional, tag = "9")]
+    pub inclusion_promise: ::core::option::Option<
+        super::super::rekor::v1::InclusionPromise,
+    >,
 }
 /// CertificateInclusionProof proves that a specific certificate is included in a
 /// Fulcio batch by providing the Merkle path from the certificate's leaf hash to

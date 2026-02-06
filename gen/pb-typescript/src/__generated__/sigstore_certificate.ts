@@ -6,7 +6,7 @@
 
 /* eslint-disable */
 import { PublicKeyDetails, publicKeyDetailsFromJSON, publicKeyDetailsToJSON } from "./sigstore_common";
-import { Checkpoint, InclusionProof } from "./sigstore_rekor";
+import { Checkpoint, InclusionPromise, InclusionProof } from "./sigstore_rekor";
 
 /**
  * Extension represents a certificate extension, similar to X.509 extensions.
@@ -149,6 +149,11 @@ export interface MTCProof {
    * in the hashedrekord entry uploaded to Rekor.
    */
   hashedrekordKeyId: Buffer;
+  /**
+   * The inclusion promise/signed entry timestamp from Rekor.
+   * This is Rekor's signature over (body, log_index, log_id, integrated_time).
+   */
+  inclusionPromise: InclusionPromise | undefined;
 }
 
 /**
@@ -282,6 +287,7 @@ export const MTCProof: MessageFns<MTCProof> = {
       hashedrekordKeyId: isSet(object.hashedrekordKeyId)
         ? Buffer.from(bytesFromBase64(object.hashedrekordKeyId))
         : Buffer.alloc(0),
+      inclusionPromise: isSet(object.inclusionPromise) ? InclusionPromise.fromJSON(object.inclusionPromise) : undefined,
     };
   },
 
@@ -310,6 +316,9 @@ export const MTCProof: MessageFns<MTCProof> = {
     }
     if (message.hashedrekordKeyId.length !== 0) {
       obj.hashedrekordKeyId = base64FromBytes(message.hashedrekordKeyId);
+    }
+    if (message.inclusionPromise !== undefined) {
+      obj.inclusionPromise = InclusionPromise.toJSON(message.inclusionPromise);
     }
     return obj;
   },

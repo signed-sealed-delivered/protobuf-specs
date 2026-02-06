@@ -147,6 +147,10 @@ message MTCProof {
         // The SHA-256 hash of the DER-encoded Fulcio CA public key that was included
         // in the hashedrekord entry uploaded to Rekor.
         bytes hashedrekord_key_id = 8 [(google.api.field_behavior) = REQUIRED];
+
+        // The inclusion promise/signed entry timestamp from Rekor.
+        // This is Rekor's signature over (body, log_index, log_id, integrated_time).
+        dev.sigstore.rekor.v1.InclusionPromise inclusion_promise = 9;
 }
 
 // CertificateInclusionProof proves that a specific certificate is included in a

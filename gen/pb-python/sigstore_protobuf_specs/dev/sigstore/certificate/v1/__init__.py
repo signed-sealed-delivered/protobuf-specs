@@ -182,6 +182,12 @@ class MtcProof(betterproto.Message):
      in the hashedrekord entry uploaded to Rekor.
     """
 
+    inclusion_promise: "__rekor_v1__.InclusionPromise" = betterproto.message_field(9)
+    """
+    The inclusion promise/signed entry timestamp from Rekor.
+     This is Rekor's signature over (body, log_index, log_id, integrated_time).
+    """
+
 
 @dataclass(eq=False, repr=False)
 class CertificateInclusionProof(betterproto.Message):
