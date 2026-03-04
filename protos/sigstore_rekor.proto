@@ -69,6 +69,15 @@ message InclusionProof {
         Checkpoint checkpoint = 5 [(google.api.field_behavior) = REQUIRED];
 }
 
+// AdditionalSignedEntryTimestamp pairs a signed entry timestamp with the
+// log ID of the signer that produced it, enabling direct verifier lookup.
+message AdditionalSignedEntryTimestamp {
+        // The unique identifier of the log that produced this SET.
+        dev.sigstore.common.v1.LogId log_id = 1;
+        // The signed entry timestamp bytes.
+        bytes signed_entry_timestamp = 2;
+}
+
 // The inclusion promise is calculated by Rekor. It's calculated as a
 // signature over a canonical JSON serialization of the persisted entry, the
 // log ID, log index and the integration timestamp.
@@ -81,6 +90,9 @@ message InclusionProof {
 // has promised to include the entry.
 message InclusionPromise {
         bytes signed_entry_timestamp = 1 [(google.api.field_behavior) = REQUIRED];
+        // Additional signed entry timestamps from hybrid-mode transparency logs.
+        // Each entry pairs a SET with the log ID of the signer that produced it.
+        repeated AdditionalSignedEntryTimestamp additional_signed_entry_timestamps = 2;
 }
 
 // TransparencyLogEntry captures all the details required from Rekor to

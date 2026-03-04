@@ -212,6 +212,17 @@ export interface CertificateAuthority {
    * timestamp.
    */
   operator: string;
+  /**
+   * The alternative public key used for ITU-T X.509 (2019) hybrid certificate
+   * verification. This key corresponds to the SubjectAltPublicKeyInfo extension
+   * (OID 2.5.29.72) embedded in hybrid certificates and is used to verify the
+   * alternative signature (AltSignatureValue extension, OID 2.5.29.74).
+   * Typically a post-quantum algorithm like ML-DSA-65 or ML-DSA-87.
+   * Only applicable when the CA issues hybrid certificates.
+   * Only supported for TrustedRoot media types matching or greater than
+   * application/vnd.dev.sigstore.trustedroot.v0.3+json
+   */
+  altPublicKey?: PublicKey | undefined;
 }
 
 /**
@@ -537,6 +548,7 @@ export const CertificateAuthority: MessageFns<CertificateAuthority> = {
       certChain: isSet(object.certChain) ? X509CertificateChain.fromJSON(object.certChain) : undefined,
       validFor: isSet(object.validFor) ? TimeRange.fromJSON(object.validFor) : undefined,
       operator: isSet(object.operator) ? globalThis.String(object.operator) : "",
+      altPublicKey: isSet(object.altPublicKey) ? PublicKey.fromJSON(object.altPublicKey) : undefined,
     };
   },
 
@@ -556,6 +568,9 @@ export const CertificateAuthority: MessageFns<CertificateAuthority> = {
     }
     if (message.operator !== "") {
       obj.operator = message.operator;
+    }
+    if (message.altPublicKey !== undefined) {
+      obj.altPublicKey = PublicKey.toJSON(message.altPublicKey);
     }
     return obj;
   },

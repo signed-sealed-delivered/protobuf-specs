@@ -126,6 +126,16 @@ pub struct CertificateAuthority {
     /// timestamp.
     #[prost(string, tag = "5")]
     pub operator: ::prost::alloc::string::String,
+    /// The alternative public key used for ITU-T X.509 (2019) hybrid certificate
+    /// verification. This key corresponds to the SubjectAltPublicKeyInfo extension
+    /// (OID 2.5.29.72) embedded in hybrid certificates and is used to verify the
+    /// alternative signature (AltSignatureValue extension, OID 2.5.29.74).
+    /// Typically a post-quantum algorithm like ML-DSA-65 or ML-DSA-87.
+    /// Only applicable when the CA issues hybrid certificates.
+    /// Only supported for TrustedRoot media types matching or greater than
+    /// application/vnd.dev.sigstore.trustedroot.v0.3+json
+    #[prost(message, optional, tag = "6")]
+    pub alt_public_key: ::core::option::Option<super::super::common::v1::PublicKey>,
 }
 /// MTCSigningAuthority describes a Merkle Tree Certificate (MTC) signing authority
 /// that is used to sign MTC subtree roots.

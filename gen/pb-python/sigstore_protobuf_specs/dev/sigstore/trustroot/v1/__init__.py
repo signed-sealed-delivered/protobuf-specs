@@ -5,13 +5,15 @@
 
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from dataclasses import dataclass
 else:
     from pydantic.dataclasses import dataclass
 
-from typing import List
+from typing import (
+    List,
+    Optional,
+)
 
 import betterproto
 from pydantic.dataclasses import rebuild_dataclass
@@ -190,6 +192,20 @@ class CertificateAuthority(betterproto.Message):
      threshold, e.g. two signed timestamps from timestamp authorities
      operated by the same operator should count as only one valid
      timestamp.
+    """
+
+    alt_public_key: Optional["__common_v1__.PublicKey"] = betterproto.message_field(
+        6, optional=True
+    )
+    """
+    The alternative public key used for ITU-T X.509 (2019) hybrid certificate
+     verification. This key corresponds to the SubjectAltPublicKeyInfo extension
+     (OID 2.5.29.72) embedded in hybrid certificates and is used to verify the
+     alternative signature (AltSignatureValue extension, OID 2.5.29.74).
+     Typically a post-quantum algorithm like ML-DSA-65 or ML-DSA-87.
+     Only applicable when the CA issues hybrid certificates.
+     Only supported for TrustedRoot media types matching or greater than
+     application/vnd.dev.sigstore.trustedroot.v0.3+json
     """
 
 
