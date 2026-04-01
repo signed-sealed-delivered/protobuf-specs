@@ -17,7 +17,7 @@ DEFAULT_PROTOC_CHECKSUM=sha256:f3340e28a83d1c637d8bafdeed92b9f7db6a384c26bca880a
 # git commit from https://github.com/googleapis/googleapis
 DEFAULT_GOOGLEAPIS_COMMIT=97763d6efb2d35474e0363c254ee6994837a08fa
 # git commit from https://github.com/grpc-ecosystem/grpc-gateway
-DEFAULT_GRPC_GATEWAY_COMMIT=fcb3c1b41455ec7d3181b10c3574b1279c69efd3
+DEFAULT_GRPC_GATEWAY_COMMIT=3623dc45e51cf06cf606e97d7ad864054f6ccb3e
 
 ##################################################################################
 ### DO NOT EDIT BELOW THIS LINE, AS THESE VALUES ARE USED IN THE CORE MAKEFILE ###
