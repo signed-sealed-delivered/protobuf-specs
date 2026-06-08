@@ -1,0 +1,235 @@
+// Copyright 2026 The Sigstore Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// RH-specific: MTC (Merkle Tree Certificate) types for the Sigstore community.
+// These types are maintained by Red Hat and are not yet part of upstream
+// sigstore/protobuf-specs. They use a distinct package namespace to avoid
+// conflicts with future upstream additions.
+//
+// Entry kinds: rhmtccommitment (commitment log entry), rhmtcmonitoring (monitoring log entry)
+
+syntax = "proto3";
+package dev.sigstore.rh.mtc.v1;
+
+import "google/api/field_behavior.proto";
+import "sigstore_common.proto";
+import "sigstore_rekor.proto";
+
+option go_package = "github.com/sigstore/protobuf-specs/gen/pb-go/rh/mtc/v1";
+option java_package = "dev.sigstore.proto.rh.mtc.v1";
+option java_multiple_files = true;
+option java_outer_classname = "RhMtcCertificateProto";
+
+// Extension represents a certificate extension, similar to X.509 extensions.
+message Extension {
+        // The Object Identifier (OID) for this extension in dotted notation.
+        string oid = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // The value of the extension.
+        bytes value = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// TBSCertificateLogEntry is the "To Be Signed" certificate log entry, inspired
+// by the IETF draft-ietf-plants-merkle-tree-certs TBSCertificate structure.
+// Unlike the draft, this stores a hash of the subject public key rather than
+// the full key: the holder retains the actual key, while the log only needs a
+// binding commitment. subject_public_key_algorithm is stored as additional metadata.
+message TBSCertificateLogEntry {
+        // The subject identity from the OIDC token.
+        string subject = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // Extensions containing additional identity claims from the OIDC token.
+        repeated Extension extensions = 2;
+
+        // SHA-256 hash of the SubjectPublicKeyInfo (PKIX/DER-encoded) public key.
+        bytes pub_key_hash = 3 [(google.api.field_behavior) = REQUIRED];
+
+        // Validity period start time (inclusive), as Unix timestamp in seconds.
+        int64 not_before = 4 [(google.api.field_behavior) = REQUIRED];
+
+        // Validity period end time (inclusive), as Unix timestamp in seconds.
+        int64 not_after = 5 [(google.api.field_behavior) = REQUIRED];
+
+        // Identifies the Fulcio CA that issued this certificate batch.
+        // subtree signing key. Corresponds to the `issuer` field in the IETF MTC draft.
+        bytes issuer = 6 [(google.api.field_behavior) = REQUIRED];
+
+        // DER-encoded OID identifying the algorithm of the subject's public key.
+        bytes subject_public_key_algorithm = 7 [(google.api.field_behavior) = REQUIRED];
+}
+
+// SubtreeSignature represents a signature over a Merkle subtree root.
+// The signed message format (200 bytes, all multi-byte integers big-endian):
+//   "mtc-subtree/v1\n\0"  (16B) — domain separation label
+//   cosigner_id           (32B) — SHA-256 of cosigner public key DER
+//   log_id                (32B) — commitment log identifier
+//   start                 ( 8B) — first certificate index in batch (inclusive)
+//   end                   ( 8B) — last certificate index in batch (exclusive)
+//   subtree_root          (32B) — Merkle root of the batch
+//   monitoring_log_id     (32B) — ID of the monitoring log
+//   monitoring_log_index  ( 8B) — log index of the rhmtcmonitoring entry
+//   monitoring_leaf_hash  (32B) — RFC 6962 leaf hash of the rhmtcmonitoring entry
+//
+// The monitoring_log_id, monitoring_log_index, and monitoring_leaf_hash fields
+// cryptographically bind each subtree signature to a specific rhmtcmonitoring entry.
+message SubtreeSignature {
+        // The signature algorithm used.
+        dev.sigstore.common.v1.PublicKeyDetails algorithm = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // The signature over the subtree root.
+        bytes signature = 2 [(google.api.field_behavior) = REQUIRED];
+
+        // The Merkle subtree root hash that was signed.
+        bytes subtree_root = 3 [(google.api.field_behavior) = REQUIRED];
+
+        // The size of the Merkle tree (number of leaf nodes).
+        int64 tree_size = 4 [(google.api.field_behavior) = REQUIRED];
+
+        // Optional hint to identify the public key (first 4 bytes of cosigner key hash, hex).
+        string key_hint = 5;
+
+        // The start index (inclusive) of the subtree range [start, end).
+        optional int64 start = 6 [(google.api.field_behavior) = REQUIRED];
+
+        // The end index (exclusive) of the subtree range [start, end).
+        int64 end = 7 [(google.api.field_behavior) = REQUIRED];
+}
+
+// CertificateInclusionProof proves a specific certificate is included in a
+// Fulcio batch via the Merkle path from the certificate's leaf hash to the root.
+message CertificateInclusionProof {
+        // The index of this certificate within the batch (0-based).
+        int64 leaf_index = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // The sibling hashes along the path from leaf to subtree root.
+        repeated bytes hashes = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// MTCBatchProof contains the Fulcio batch-specific proof material:
+// the Merkle inclusion proof from the certificate's leaf hash to the subtree root,
+// and the subtree signatures that cover the batch Merkle root.
+//
+// Verification steps 1-3:
+//   1. ComputeLeafHash(TBSCertificateLogEntry): produces this certificate's leaf hash
+//   2. VerifyCertificateInclusionProof(leaf_hash, certificate_inclusion_proof): produces subtree_root
+//   3. VerifySubtreeSignatures(subtree_root, subtree_signatures): Fulcio signed this batch
+message MTCBatchProof {
+        // Merkle inclusion proof from this certificate's leaf hash to the subtree root.
+        CertificateInclusionProof certificate_inclusion_proof = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // Subtree signatures over the Merkle root of the Fulcio batch.
+        repeated SubtreeSignature subtree_signatures = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// MTCMonitoringRef identifies the rhmtcmonitoring entry in the monitoring log.
+// The monitoring_log_id, log_index, and leaf_hash are all included verbatim in
+// the SubtreeSignature signed message, so each subtree signature is
+// cryptographically bound to this specific monitoring entry.
+message MTCMonitoringRef {
+        // Log index of the rhmtcmonitoring entry in the monitoring log.
+        optional int64 log_index = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // Identifier of the monitoring log.
+        // Also present verbatim in the SubtreeSignature signed message.
+        bytes log_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+        // RFC 6962 leaf hash of the rhmtcmonitoring entry: SHA-256(0x00 || batch_bytes).
+        // Included verbatim in the SubtreeSignature signed message.
+        bytes leaf_hash = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// MTCLogProof contains the transparency log proof material for the rhmtccommitment
+// entry that anchors the Fulcio batch to the commitment log.
+//
+// Verification steps 4-6:
+//   4. Reconstruct rhmtccommitment JSON from {log_id, monitoring_ref, subtree_signatures},
+//      compute leaf_hash = SHA-256(0x00 || JCS-canonical JSON), verify equals leaf_hash field
+//   5. VerifyInclusionProof(leaf_hash, inclusion_hashes, root_hash): proves commitment is in the log
+//   6. VerifyCheckpoint(checkpoint, root_hash): a trusted cosigner signed this tree state
+message MTCLogProof {
+        // The index of the rhmtccommitment entry in the commitment log.
+        int64 log_index = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // Identifier of the commitment log.
+        bytes log_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+        // The RFC 6962 Merkle inclusion proof hashes from the commitment leaf to the root.
+        repeated bytes inclusion_hashes = 3 [(google.api.field_behavior) = REQUIRED];
+
+        // The Merkle tree root hash at the time of inclusion, from the signed checkpoint.
+        bytes root_hash = 4 [(google.api.field_behavior) = REQUIRED];
+
+        // The log tree size at the time of inclusion.
+        int64 tree_size = 5 [(google.api.field_behavior) = REQUIRED];
+
+        // The multi-signature signed-note checkpoint from the commitment log.
+        dev.sigstore.rekor.v1.Checkpoint checkpoint = 6 [(google.api.field_behavior) = REQUIRED];
+
+        // The RFC 6962 leaf hash of the rhmtccommitment entry:
+        // SHA-256(0x00 || JCS-canonical commitment JSON).
+        // Clients independently reconstruct and verify this value before walking
+        // the inclusion proof.
+        bytes leaf_hash = 7 [(google.api.field_behavior) = REQUIRED];
+
+        // The UNIX timestamp when the commitment entry was integrated into the log.
+        // Required to reconstruct and verify the Signed Entry Timestamp (SET).
+        int64 integrated_time = 8;
+
+        // Signed Entry Timestamps (SETs) from the commitment log. Present when the
+        // commitment log is a Rekor v1 instance.
+        dev.sigstore.rekor.v1.InclusionPromise inclusion_promise = 9;
+}
+
+// MTCProof contains all cryptographic material needed to verify an MTC certificate.
+message MTCProof {
+        // Fulcio batch proof: certificate position and subtree signatures.
+        MTCBatchProof batch_proof = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // Commitment log proof: inclusion proof and checkpoint for the rhmtccommitment entry.
+        MTCLogProof log_proof = 2 [(google.api.field_behavior) = REQUIRED];
+
+        // Reference to the rhmtcmonitoring entry. Cryptographically bound to the
+        // batch proof via the SubtreeSignature signed message.
+        MTCMonitoringRef monitoring_ref = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// MTCCertificate represents a complete Merkle Tree Certificate.
+message MTCCertificate {
+        // The certificate entry that was logged to Rekor.
+        TBSCertificateLogEntry tbs_certificate_log_entry = 1 [(google.api.field_behavior) = REQUIRED];
+
+        // The proof material for verification.
+        MTCProof mtc_proof = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// MTCSigningAuthority describes an RH MTC subtree signing authority.
+// These keys are used to sign MTC subtree roots and MUST be trusted by
+// clients for verifying MTC certificates.
+message MTCSigningAuthority {
+        // The URI identifies the certificate authority that operates this
+        // signing key. RECOMMENDED to be the base URL of the CA.
+        string uri = 1;
+
+        // The public key used to verify MTC subtree signatures.
+        // This attribute contains the signature algorithm used for signing.
+        dev.sigstore.common.v1.PublicKey public_key = 2;
+
+        // The time range this key was valid. Clients MUST check timestamps
+        // against this range. Considered valid *inclusive* of the endpoints.
+        dev.sigstore.common.v1.TimeRange valid_for = 3;
+
+        // The operator of this MTC signing authority.
+        // MUST be formatted as a scheme-less URI, e.g. sigstore.dev
+        string operator = 4;
+}

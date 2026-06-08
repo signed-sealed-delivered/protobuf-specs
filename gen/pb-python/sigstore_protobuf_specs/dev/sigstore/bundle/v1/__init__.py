@@ -20,9 +20,9 @@ from pydantic import model_validator
 from pydantic.dataclasses import rebuild_dataclass
 
 from .....io import intoto as ____io_intoto__
-from ...certificate import v1 as __certificate_v1__
 from ...common import v1 as __common_v1__
 from ...rekor import v1 as __rekor_v1__
+from ...rh.mtc import v1 as __rh_mtc_v1__
 
 
 @dataclass(eq=False, repr=False)
@@ -68,8 +68,8 @@ class VerificationMaterial(betterproto.Message):
     certificate: Optional["__common_v1__.X509Certificate"] = betterproto.message_field(
         5, optional=True, group="content"
     )
-    mtc_certificate: Optional["__certificate_v1__.MtcCertificate"] = (
-        betterproto.message_field(6, optional=True, group="content")
+    rhmtc_certificate: Optional["__rh_mtc_v1__.MtcCertificate"] = (
+        betterproto.message_field(1000, optional=True, group="content")
     )
     tlog_entries: List["__rekor_v1__.TransparencyLogEntry"] = betterproto.message_field(
         3
@@ -92,13 +92,12 @@ class VerificationMaterial(betterproto.Message):
      tlog_entries.inclusion_promise.signed_entry_timestamp.
     """
 
-    mtc_public_key: "__common_v1__.PublicKey" = betterproto.message_field(7)
+    rhmtc_public_key: "__common_v1__.PublicKey" = betterproto.message_field(1001)
     """
-    The full public key material, required when using mtc_certificate.
-     Since MTC certificates only store a hash of the public key,
-     the full key must be provided separately for signature verification.
-     This field MUST be populated when content is mtc_certificate.
-     This field SHOULD NOT be populated for other content types.
+    RH-specific: the full public key for MTC certificate verification.
+     Since MTC certificates store only a hash of the public key, the full
+     key must be provided separately. MUST be populated when content is
+     rhmtc_certificate. SHOULD NOT be populated for other content types.
     """
 
     @model_validator(mode="after")

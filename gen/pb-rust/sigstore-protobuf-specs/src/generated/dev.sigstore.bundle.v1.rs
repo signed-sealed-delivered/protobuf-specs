@@ -54,13 +54,12 @@ pub struct VerificationMaterial {
     /// tlog_entries.inclusion_promise.signed_entry_timestamp.
     #[prost(message, optional, tag = "4")]
     pub timestamp_verification_data: ::core::option::Option<TimestampVerificationData>,
-    /// The full public key material, required when using mtc_certificate.
-    /// Since MTC certificates only store a hash of the public key,
-    /// the full key must be provided separately for signature verification.
-    /// This field MUST be populated when content is mtc_certificate.
-    /// This field SHOULD NOT be populated for other content types.
-    #[prost(message, optional, tag = "7")]
-    pub mtc_public_key: ::core::option::Option<super::super::common::v1::PublicKey>,
+    /// RH-specific: the full public key for MTC certificate verification.
+    /// Since MTC certificates store only a hash of the public key, the full
+    /// key must be provided separately. MUST be populated when content is
+    /// rhmtc_certificate. SHOULD NOT be populated for other content types.
+    #[prost(message, optional, tag = "1001")]
+    pub rhmtc_public_key: ::core::option::Option<super::super::common::v1::PublicKey>,
     /// The key material for verification purposes.
     ///
     /// This allows key material to be conveyed in one of three forms:
@@ -101,7 +100,7 @@ pub struct VerificationMaterial {
     ///
     /// When used in a `0.3+` bundle with the PGI and "keyless" signing with MTC batching,
     /// form (4) MAY be used.
-    #[prost(oneof = "verification_material::Content", tags = "1, 2, 5, 6")]
+    #[prost(oneof = "verification_material::Content", tags = "1, 2, 5, 1000")]
     pub content: ::core::option::Option<verification_material::Content>,
 }
 /// Nested message and enum types in `VerificationMaterial`.
@@ -158,8 +157,8 @@ pub mod verification_material {
         X509CertificateChain(super::super::super::common::v1::X509CertificateChain),
         #[prost(message, tag = "5")]
         Certificate(super::super::super::common::v1::X509Certificate),
-        #[prost(message, tag = "6")]
-        MtcCertificate(super::super::super::certificate::v1::MtcCertificate),
+        #[prost(message, tag = "1000")]
+        RhmtcCertificate(super::super::super::rh::mtc::v1::MtcCertificate),
     }
 }
 #[derive(

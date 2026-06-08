@@ -21,7 +21,7 @@ import "google/api/field_behavior.proto";
 import "envelope.proto";
 import "sigstore_common.proto";
 import "sigstore_rekor.proto";
-import "sigstore_certificate.proto";
+import "rh_mtc_certificate.proto";
 
 option go_package = "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1";
 option java_package = "dev.sigstore.proto.bundle.v1";
@@ -102,7 +102,7 @@ message VerificationMaterial {
                 dev.sigstore.common.v1.PublicKeyIdentifier public_key = 1 [(google.api.field_behavior) = REQUIRED];
                 dev.sigstore.common.v1.X509CertificateChain x509_certificate_chain = 2 [(google.api.field_behavior) = REQUIRED];
                 dev.sigstore.common.v1.X509Certificate certificate = 5 [(google.api.field_behavior) = REQUIRED];
-                dev.sigstore.certificate.v1.MTCCertificate mtc_certificate = 6 [(google.api.field_behavior) = REQUIRED];
+                dev.sigstore.rh.mtc.v1.MTCCertificate rhmtc_certificate = 1000 [(google.api.field_behavior) = REQUIRED];
         }
         // An inclusion proof and an optional signed timestamp from the log.
         // Client verification libraries MAY provide an option to support v0.1
@@ -115,12 +115,11 @@ message VerificationMaterial {
         // Timestamp may also come from
         // tlog_entries.inclusion_promise.signed_entry_timestamp.
         TimestampVerificationData timestamp_verification_data = 4;
-        // The full public key material, required when using mtc_certificate.
-        // Since MTC certificates only store a hash of the public key,
-        // the full key must be provided separately for signature verification.
-        // This field MUST be populated when content is mtc_certificate.
-        // This field SHOULD NOT be populated for other content types.
-        dev.sigstore.common.v1.PublicKey mtc_public_key = 7;
+        // RH-specific: the full public key for MTC certificate verification.
+        // Since MTC certificates store only a hash of the public key, the full
+        // key must be provided separately. MUST be populated when content is
+        // rhmtc_certificate. SHOULD NOT be populated for other content types.
+        dev.sigstore.common.v1.PublicKey rhmtc_public_key = 1001;
 }
 
 message Bundle {

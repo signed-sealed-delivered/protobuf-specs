@@ -6,11 +6,6 @@ pub mod dev {
                 include!("dev.sigstore.bundle.v1.rs");
             }
         }
-        pub mod certificate {
-            pub mod v1 {
-                include!("dev.sigstore.certificate.v1.rs");
-            }
-        }
         pub mod common {
             pub mod v1 {
                 include!("dev.sigstore.common.v1.rs");
@@ -27,6 +22,13 @@ pub mod dev {
             }
             pub mod v2 {
                 include!("dev.sigstore.rekor.v2.rs");
+            }
+        }
+        pub mod rh {
+            pub mod mtc {
+                pub mod v1 {
+                    include!("dev.sigstore.rh.mtc.v1.rs");
+                }
             }
         }
         pub mod trustroot {
