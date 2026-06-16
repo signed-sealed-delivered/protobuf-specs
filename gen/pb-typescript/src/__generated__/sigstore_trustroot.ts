@@ -271,6 +271,20 @@ export interface TrustedRoot {
   ctlogs: TransparencyLogInstance[];
   /** A set of trusted timestamping authorities. */
   timestampAuthorities: CertificateAuthority[];
+  /**
+   * Extended set of trusted Rekor instances whose signing algorithms may
+   * not be recognised by older clients. Clients that do not support the
+   * algorithm of an entry SHOULD log a warning and skip that entry.
+   * Older clients that do not know this field will ignore it entirely,
+   * preserving backwards compatibility.
+   */
+  extendedTlogs: TransparencyLogInstance[];
+  /**
+   * Extended set of trusted CT log instances whose signing algorithms may
+   * not be recognised by older clients. Same skip-and-warn semantics as
+   * extended_tlogs.
+   */
+  extendedCtlogs: TransparencyLogInstance[];
 }
 
 /**
@@ -531,6 +545,12 @@ export const TrustedRoot: MessageFns<TrustedRoot> = {
       timestampAuthorities: globalThis.Array.isArray(object?.timestampAuthorities)
         ? object.timestampAuthorities.map((e: any) => CertificateAuthority.fromJSON(e))
         : [],
+      extendedTlogs: globalThis.Array.isArray(object?.extendedTlogs)
+        ? object.extendedTlogs.map((e: any) => TransparencyLogInstance.fromJSON(e))
+        : [],
+      extendedCtlogs: globalThis.Array.isArray(object?.extendedCtlogs)
+        ? object.extendedCtlogs.map((e: any) => TransparencyLogInstance.fromJSON(e))
+        : [],
     };
   },
 
@@ -550,6 +570,12 @@ export const TrustedRoot: MessageFns<TrustedRoot> = {
     }
     if (message.timestampAuthorities?.length) {
       obj.timestampAuthorities = message.timestampAuthorities.map((e) => CertificateAuthority.toJSON(e));
+    }
+    if (message.extendedTlogs?.length) {
+      obj.extendedTlogs = message.extendedTlogs.map((e) => TransparencyLogInstance.toJSON(e));
+    }
+    if (message.extendedCtlogs?.length) {
+      obj.extendedCtlogs = message.extendedCtlogs.map((e) => TransparencyLogInstance.toJSON(e));
     }
     return obj;
   },

@@ -191,6 +191,18 @@ pub struct TrustedRoot {
     /// A set of trusted timestamping authorities.
     #[prost(message, repeated, tag = "5")]
     pub timestamp_authorities: ::prost::alloc::vec::Vec<CertificateAuthority>,
+    /// Extended set of trusted Rekor instances whose signing algorithms may
+    /// not be recognised by older clients. Clients that do not support the
+    /// algorithm of an entry SHOULD log a warning and skip that entry.
+    /// Older clients that do not know this field will ignore it entirely,
+    /// preserving backwards compatibility.
+    #[prost(message, repeated, tag = "6")]
+    pub extended_tlogs: ::prost::alloc::vec::Vec<TransparencyLogInstance>,
+    /// Extended set of trusted CT log instances whose signing algorithms may
+    /// not be recognised by older clients. Same skip-and-warn semantics as
+    /// extended_tlogs.
+    #[prost(message, repeated, tag = "7")]
+    pub extended_ctlogs: ::prost::alloc::vec::Vec<TransparencyLogInstance>,
 }
 /// SigningConfig represents the trusted entities/state needed by Sigstore
 /// signing. In particular, it primarily contains service URLs that a Sigstore

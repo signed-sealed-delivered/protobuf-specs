@@ -256,6 +256,22 @@ class TrustedRoot(betterproto.Message):
     timestamp_authorities: List["CertificateAuthority"] = betterproto.message_field(5)
     """A set of trusted timestamping authorities."""
 
+    extended_tlogs: List["TransparencyLogInstance"] = betterproto.message_field(6)
+    """
+    Extended set of trusted Rekor instances whose signing algorithms may
+     not be recognised by older clients. Clients that do not support the
+     algorithm of an entry SHOULD log a warning and skip that entry.
+     Older clients that do not know this field will ignore it entirely,
+     preserving backwards compatibility.
+    """
+
+    extended_ctlogs: List["TransparencyLogInstance"] = betterproto.message_field(7)
+    """
+    Extended set of trusted CT log instances whose signing algorithms may
+     not be recognised by older clients. Same skip-and-warn semantics as
+     extended_tlogs.
+    """
+
 
 @dataclass(eq=False, repr=False)
 class SigningConfig(betterproto.Message):

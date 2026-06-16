@@ -64,6 +64,19 @@ export interface InclusionProof {
 }
 
 /**
+ * AdditionalSignedEntryTimestamp pairs a signed entry timestamp with the
+ * log ID of the signer that produced it, enabling direct verifier lookup.
+ */
+export interface AdditionalSignedEntryTimestamp {
+  /** The unique identifier of the log that produced this SET. */
+  logId:
+    | LogId
+    | undefined;
+  /** The signed entry timestamp bytes. */
+  signedEntryTimestamp: Buffer;
+}
+
+/**
  * The inclusion promise is calculated by Rekor. It's calculated as a
  * signature over a canonical JSON serialization of the persisted entry, the
  * log ID, log index and the integration timestamp.
@@ -77,6 +90,11 @@ export interface InclusionProof {
  */
 export interface InclusionPromise {
   signedEntryTimestamp: Buffer;
+  /**
+   * Additional signed entry timestamps from hybrid-mode transparency logs.
+   * Each entry pairs a SET with the log ID of the signer that produced it.
+   */
+  additionalSignedEntryTimestamps: AdditionalSignedEntryTimestamp[];
 }
 
 /**
@@ -221,12 +239,37 @@ export const InclusionProof: MessageFns<InclusionProof> = {
   },
 };
 
+export const AdditionalSignedEntryTimestamp: MessageFns<AdditionalSignedEntryTimestamp> = {
+  fromJSON(object: any): AdditionalSignedEntryTimestamp {
+    return {
+      logId: isSet(object.logId) ? LogId.fromJSON(object.logId) : undefined,
+      signedEntryTimestamp: isSet(object.signedEntryTimestamp)
+        ? Buffer.from(bytesFromBase64(object.signedEntryTimestamp))
+        : Buffer.alloc(0),
+    };
+  },
+
+  toJSON(message: AdditionalSignedEntryTimestamp): unknown {
+    const obj: any = {};
+    if (message.logId !== undefined) {
+      obj.logId = LogId.toJSON(message.logId);
+    }
+    if (message.signedEntryTimestamp.length !== 0) {
+      obj.signedEntryTimestamp = base64FromBytes(message.signedEntryTimestamp);
+    }
+    return obj;
+  },
+};
+
 export const InclusionPromise: MessageFns<InclusionPromise> = {
   fromJSON(object: any): InclusionPromise {
     return {
       signedEntryTimestamp: isSet(object.signedEntryTimestamp)
         ? Buffer.from(bytesFromBase64(object.signedEntryTimestamp))
         : Buffer.alloc(0),
+      additionalSignedEntryTimestamps: globalThis.Array.isArray(object?.additionalSignedEntryTimestamps)
+        ? object.additionalSignedEntryTimestamps.map((e: any) => AdditionalSignedEntryTimestamp.fromJSON(e))
+        : [],
     };
   },
 
@@ -234,6 +277,11 @@ export const InclusionPromise: MessageFns<InclusionPromise> = {
     const obj: any = {};
     if (message.signedEntryTimestamp.length !== 0) {
       obj.signedEntryTimestamp = base64FromBytes(message.signedEntryTimestamp);
+    }
+    if (message.additionalSignedEntryTimestamps?.length) {
+      obj.additionalSignedEntryTimestamps = message.additionalSignedEntryTimestamps.map((e) =>
+        AdditionalSignedEntryTimestamp.toJSON(e)
+      );
     }
     return obj;
   },

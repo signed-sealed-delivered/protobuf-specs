@@ -236,6 +236,62 @@ func (x *InclusionProof) GetCheckpoint() *Checkpoint {
 	return nil
 }
 
+// AdditionalSignedEntryTimestamp pairs a signed entry timestamp with the
+// log ID of the signer that produced it, enabling direct verifier lookup.
+type AdditionalSignedEntryTimestamp struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The unique identifier of the log that produced this SET.
+	LogId *v1.LogId `protobuf:"bytes,1,opt,name=log_id,json=logId,proto3" json:"log_id,omitempty"`
+	// The signed entry timestamp bytes.
+	SignedEntryTimestamp []byte `protobuf:"bytes,2,opt,name=signed_entry_timestamp,json=signedEntryTimestamp,proto3" json:"signed_entry_timestamp,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *AdditionalSignedEntryTimestamp) Reset() {
+	*x = AdditionalSignedEntryTimestamp{}
+	mi := &file_sigstore_rekor_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdditionalSignedEntryTimestamp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdditionalSignedEntryTimestamp) ProtoMessage() {}
+
+func (x *AdditionalSignedEntryTimestamp) ProtoReflect() protoreflect.Message {
+	mi := &file_sigstore_rekor_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdditionalSignedEntryTimestamp.ProtoReflect.Descriptor instead.
+func (*AdditionalSignedEntryTimestamp) Descriptor() ([]byte, []int) {
+	return file_sigstore_rekor_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AdditionalSignedEntryTimestamp) GetLogId() *v1.LogId {
+	if x != nil {
+		return x.LogId
+	}
+	return nil
+}
+
+func (x *AdditionalSignedEntryTimestamp) GetSignedEntryTimestamp() []byte {
+	if x != nil {
+		return x.SignedEntryTimestamp
+	}
+	return nil
+}
+
 // The inclusion promise is calculated by Rekor. It's calculated as a
 // signature over a canonical JSON serialization of the persisted entry, the
 // log ID, log index and the integration timestamp.
@@ -249,13 +305,16 @@ func (x *InclusionProof) GetCheckpoint() *Checkpoint {
 type InclusionPromise struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	SignedEntryTimestamp []byte                 `protobuf:"bytes,1,opt,name=signed_entry_timestamp,json=signedEntryTimestamp,proto3" json:"signed_entry_timestamp,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Additional signed entry timestamps from hybrid-mode transparency logs.
+	// Each entry pairs a SET with the log ID of the signer that produced it.
+	AdditionalSignedEntryTimestamps []*AdditionalSignedEntryTimestamp `protobuf:"bytes,2,rep,name=additional_signed_entry_timestamps,json=additionalSignedEntryTimestamps,proto3" json:"additional_signed_entry_timestamps,omitempty"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *InclusionPromise) Reset() {
 	*x = InclusionPromise{}
-	mi := &file_sigstore_rekor_proto_msgTypes[3]
+	mi := &file_sigstore_rekor_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -267,7 +326,7 @@ func (x *InclusionPromise) String() string {
 func (*InclusionPromise) ProtoMessage() {}
 
 func (x *InclusionPromise) ProtoReflect() protoreflect.Message {
-	mi := &file_sigstore_rekor_proto_msgTypes[3]
+	mi := &file_sigstore_rekor_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -280,12 +339,19 @@ func (x *InclusionPromise) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InclusionPromise.ProtoReflect.Descriptor instead.
 func (*InclusionPromise) Descriptor() ([]byte, []int) {
-	return file_sigstore_rekor_proto_rawDescGZIP(), []int{3}
+	return file_sigstore_rekor_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *InclusionPromise) GetSignedEntryTimestamp() []byte {
 	if x != nil {
 		return x.SignedEntryTimestamp
+	}
+	return nil
+}
+
+func (x *InclusionPromise) GetAdditionalSignedEntryTimestamps() []*AdditionalSignedEntryTimestamp {
+	if x != nil {
+		return x.AdditionalSignedEntryTimestamps
 	}
 	return nil
 }
@@ -349,7 +415,7 @@ type TransparencyLogEntry struct {
 
 func (x *TransparencyLogEntry) Reset() {
 	*x = TransparencyLogEntry{}
-	mi := &file_sigstore_rekor_proto_msgTypes[4]
+	mi := &file_sigstore_rekor_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -361,7 +427,7 @@ func (x *TransparencyLogEntry) String() string {
 func (*TransparencyLogEntry) ProtoMessage() {}
 
 func (x *TransparencyLogEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_sigstore_rekor_proto_msgTypes[4]
+	mi := &file_sigstore_rekor_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -374,7 +440,7 @@ func (x *TransparencyLogEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransparencyLogEntry.ProtoReflect.Descriptor instead.
 func (*TransparencyLogEntry) Descriptor() ([]byte, []int) {
-	return file_sigstore_rekor_proto_rawDescGZIP(), []int{4}
+	return file_sigstore_rekor_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TransparencyLogEntry) GetLogIndex() int64 {
@@ -444,9 +510,13 @@ const file_sigstore_rekor_proto_rawDesc = "" +
 	"\x06hashes\x18\x04 \x03(\fB\x03\xe0A\x02R\x06hashes\x12F\n" +
 	"\n" +
 	"checkpoint\x18\x05 \x01(\v2!.dev.sigstore.rekor.v1.CheckpointB\x03\xe0A\x02R\n" +
-	"checkpoint\"M\n" +
+	"checkpoint\"\x8c\x01\n" +
+	"\x1eAdditionalSignedEntryTimestamp\x124\n" +
+	"\x06log_id\x18\x01 \x01(\v2\x1d.dev.sigstore.common.v1.LogIdR\x05logId\x124\n" +
+	"\x16signed_entry_timestamp\x18\x02 \x01(\fR\x14signedEntryTimestamp\"\xd2\x01\n" +
 	"\x10InclusionPromise\x129\n" +
-	"\x16signed_entry_timestamp\x18\x01 \x01(\fB\x03\xe0A\x02R\x14signedEntryTimestamp\"\xc7\x03\n" +
+	"\x16signed_entry_timestamp\x18\x01 \x01(\fB\x03\xe0A\x02R\x14signedEntryTimestamp\x12\x82\x01\n" +
+	"\"additional_signed_entry_timestamps\x18\x02 \x03(\v25.dev.sigstore.rekor.v1.AdditionalSignedEntryTimestampR\x1fadditionalSignedEntryTimestamps\"\xc7\x03\n" +
 	"\x14TransparencyLogEntry\x12 \n" +
 	"\tlog_index\x18\x01 \x01(\x03B\x03\xe0A\x02R\blogIndex\x129\n" +
 	"\x06log_id\x18\x02 \x01(\v2\x1d.dev.sigstore.common.v1.LogIdB\x03\xe0A\x02R\x05logId\x12J\n" +
@@ -470,26 +540,29 @@ func file_sigstore_rekor_proto_rawDescGZIP() []byte {
 	return file_sigstore_rekor_proto_rawDescData
 }
 
-var file_sigstore_rekor_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_sigstore_rekor_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_sigstore_rekor_proto_goTypes = []any{
-	(*KindVersion)(nil),          // 0: dev.sigstore.rekor.v1.KindVersion
-	(*Checkpoint)(nil),           // 1: dev.sigstore.rekor.v1.Checkpoint
-	(*InclusionProof)(nil),       // 2: dev.sigstore.rekor.v1.InclusionProof
-	(*InclusionPromise)(nil),     // 3: dev.sigstore.rekor.v1.InclusionPromise
-	(*TransparencyLogEntry)(nil), // 4: dev.sigstore.rekor.v1.TransparencyLogEntry
-	(*v1.LogId)(nil),             // 5: dev.sigstore.common.v1.LogId
+	(*KindVersion)(nil),                    // 0: dev.sigstore.rekor.v1.KindVersion
+	(*Checkpoint)(nil),                     // 1: dev.sigstore.rekor.v1.Checkpoint
+	(*InclusionProof)(nil),                 // 2: dev.sigstore.rekor.v1.InclusionProof
+	(*AdditionalSignedEntryTimestamp)(nil), // 3: dev.sigstore.rekor.v1.AdditionalSignedEntryTimestamp
+	(*InclusionPromise)(nil),               // 4: dev.sigstore.rekor.v1.InclusionPromise
+	(*TransparencyLogEntry)(nil),           // 5: dev.sigstore.rekor.v1.TransparencyLogEntry
+	(*v1.LogId)(nil),                       // 6: dev.sigstore.common.v1.LogId
 }
 var file_sigstore_rekor_proto_depIdxs = []int32{
 	1, // 0: dev.sigstore.rekor.v1.InclusionProof.checkpoint:type_name -> dev.sigstore.rekor.v1.Checkpoint
-	5, // 1: dev.sigstore.rekor.v1.TransparencyLogEntry.log_id:type_name -> dev.sigstore.common.v1.LogId
-	0, // 2: dev.sigstore.rekor.v1.TransparencyLogEntry.kind_version:type_name -> dev.sigstore.rekor.v1.KindVersion
-	3, // 3: dev.sigstore.rekor.v1.TransparencyLogEntry.inclusion_promise:type_name -> dev.sigstore.rekor.v1.InclusionPromise
-	2, // 4: dev.sigstore.rekor.v1.TransparencyLogEntry.inclusion_proof:type_name -> dev.sigstore.rekor.v1.InclusionProof
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	6, // 1: dev.sigstore.rekor.v1.AdditionalSignedEntryTimestamp.log_id:type_name -> dev.sigstore.common.v1.LogId
+	3, // 2: dev.sigstore.rekor.v1.InclusionPromise.additional_signed_entry_timestamps:type_name -> dev.sigstore.rekor.v1.AdditionalSignedEntryTimestamp
+	6, // 3: dev.sigstore.rekor.v1.TransparencyLogEntry.log_id:type_name -> dev.sigstore.common.v1.LogId
+	0, // 4: dev.sigstore.rekor.v1.TransparencyLogEntry.kind_version:type_name -> dev.sigstore.rekor.v1.KindVersion
+	4, // 5: dev.sigstore.rekor.v1.TransparencyLogEntry.inclusion_promise:type_name -> dev.sigstore.rekor.v1.InclusionPromise
+	2, // 6: dev.sigstore.rekor.v1.TransparencyLogEntry.inclusion_proof:type_name -> dev.sigstore.rekor.v1.InclusionProof
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_sigstore_rekor_proto_init() }
@@ -503,7 +576,7 @@ func file_sigstore_rekor_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sigstore_rekor_proto_rawDesc), len(file_sigstore_rekor_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

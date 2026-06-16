@@ -397,8 +397,18 @@ type TrustedRoot struct {
 	Ctlogs []*TransparencyLogInstance `protobuf:"bytes,4,rep,name=ctlogs,proto3" json:"ctlogs,omitempty"`
 	// A set of trusted timestamping authorities.
 	TimestampAuthorities []*CertificateAuthority `protobuf:"bytes,5,rep,name=timestamp_authorities,json=timestampAuthorities,proto3" json:"timestamp_authorities,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Extended set of trusted Rekor instances whose signing algorithms may
+	// not be recognised by older clients. Clients that do not support the
+	// algorithm of an entry SHOULD log a warning and skip that entry.
+	// Older clients that do not know this field will ignore it entirely,
+	// preserving backwards compatibility.
+	ExtendedTlogs []*TransparencyLogInstance `protobuf:"bytes,6,rep,name=extended_tlogs,json=extendedTlogs,proto3" json:"extended_tlogs,omitempty"`
+	// Extended set of trusted CT log instances whose signing algorithms may
+	// not be recognised by older clients. Same skip-and-warn semantics as
+	// extended_tlogs.
+	ExtendedCtlogs []*TransparencyLogInstance `protobuf:"bytes,7,rep,name=extended_ctlogs,json=extendedCtlogs,proto3" json:"extended_ctlogs,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *TrustedRoot) Reset() {
@@ -462,6 +472,20 @@ func (x *TrustedRoot) GetCtlogs() []*TransparencyLogInstance {
 func (x *TrustedRoot) GetTimestampAuthorities() []*CertificateAuthority {
 	if x != nil {
 		return x.TimestampAuthorities
+	}
+	return nil
+}
+
+func (x *TrustedRoot) GetExtendedTlogs() []*TransparencyLogInstance {
+	if x != nil {
+		return x.ExtendedTlogs
+	}
+	return nil
+}
+
+func (x *TrustedRoot) GetExtendedCtlogs() []*TransparencyLogInstance {
+	if x != nil {
+		return x.ExtendedCtlogs
 	}
 	return nil
 }
@@ -866,14 +890,16 @@ const file_sigstore_trustroot_proto_rawDesc = "" +
 	"\n" +
 	"cert_chain\x18\x03 \x01(\v2,.dev.sigstore.common.v1.X509CertificateChainR\tcertChain\x12>\n" +
 	"\tvalid_for\x18\x04 \x01(\v2!.dev.sigstore.common.v1.TimeRangeR\bvalidFor\x12\x1a\n" +
-	"\boperator\x18\x05 \x01(\tR\boperator\"\x92\x03\n" +
+	"\boperator\x18\x05 \x01(\tR\boperator\"\xca\x04\n" +
 	"\vTrustedRoot\x12\x1d\n" +
 	"\n" +
 	"media_type\x18\x01 \x01(\tR\tmediaType\x12H\n" +
 	"\x05tlogs\x18\x02 \x03(\v22.dev.sigstore.trustroot.v1.TransparencyLogInstanceR\x05tlogs\x12h\n" +
 	"\x17certificate_authorities\x18\x03 \x03(\v2/.dev.sigstore.trustroot.v1.CertificateAuthorityR\x16certificateAuthorities\x12J\n" +
 	"\x06ctlogs\x18\x04 \x03(\v22.dev.sigstore.trustroot.v1.TransparencyLogInstanceR\x06ctlogs\x12d\n" +
-	"\x15timestamp_authorities\x18\x05 \x03(\v2/.dev.sigstore.trustroot.v1.CertificateAuthorityR\x14timestampAuthorities\"\xea\x03\n" +
+	"\x15timestamp_authorities\x18\x05 \x03(\v2/.dev.sigstore.trustroot.v1.CertificateAuthorityR\x14timestampAuthorities\x12Y\n" +
+	"\x0eextended_tlogs\x18\x06 \x03(\v22.dev.sigstore.trustroot.v1.TransparencyLogInstanceR\rextendedTlogs\x12[\n" +
+	"\x0fextended_ctlogs\x18\a \x03(\v22.dev.sigstore.trustroot.v1.TransparencyLogInstanceR\x0eextendedCtlogs\"\xea\x03\n" +
 	"\rSigningConfig\x12\x1d\n" +
 	"\n" +
 	"media_type\x18\x05 \x01(\tR\tmediaType\x12;\n" +
@@ -947,21 +973,23 @@ var file_sigstore_trustroot_proto_depIdxs = []int32{
 	2,  // 8: dev.sigstore.trustroot.v1.TrustedRoot.certificate_authorities:type_name -> dev.sigstore.trustroot.v1.CertificateAuthority
 	1,  // 9: dev.sigstore.trustroot.v1.TrustedRoot.ctlogs:type_name -> dev.sigstore.trustroot.v1.TransparencyLogInstance
 	2,  // 10: dev.sigstore.trustroot.v1.TrustedRoot.timestamp_authorities:type_name -> dev.sigstore.trustroot.v1.CertificateAuthority
-	5,  // 11: dev.sigstore.trustroot.v1.SigningConfig.ca_urls:type_name -> dev.sigstore.trustroot.v1.Service
-	5,  // 12: dev.sigstore.trustroot.v1.SigningConfig.oidc_urls:type_name -> dev.sigstore.trustroot.v1.Service
-	5,  // 13: dev.sigstore.trustroot.v1.SigningConfig.rekor_tlog_urls:type_name -> dev.sigstore.trustroot.v1.Service
-	6,  // 14: dev.sigstore.trustroot.v1.SigningConfig.rekor_tlog_config:type_name -> dev.sigstore.trustroot.v1.ServiceConfiguration
-	5,  // 15: dev.sigstore.trustroot.v1.SigningConfig.tsa_urls:type_name -> dev.sigstore.trustroot.v1.Service
-	6,  // 16: dev.sigstore.trustroot.v1.SigningConfig.tsa_config:type_name -> dev.sigstore.trustroot.v1.ServiceConfiguration
-	13, // 17: dev.sigstore.trustroot.v1.Service.valid_for:type_name -> dev.sigstore.common.v1.TimeRange
-	0,  // 18: dev.sigstore.trustroot.v1.ServiceConfiguration.selector:type_name -> dev.sigstore.trustroot.v1.ServiceSelector
-	3,  // 19: dev.sigstore.trustroot.v1.ClientTrustConfig.trusted_root:type_name -> dev.sigstore.trustroot.v1.TrustedRoot
-	4,  // 20: dev.sigstore.trustroot.v1.ClientTrustConfig.signing_config:type_name -> dev.sigstore.trustroot.v1.SigningConfig
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	1,  // 11: dev.sigstore.trustroot.v1.TrustedRoot.extended_tlogs:type_name -> dev.sigstore.trustroot.v1.TransparencyLogInstance
+	1,  // 12: dev.sigstore.trustroot.v1.TrustedRoot.extended_ctlogs:type_name -> dev.sigstore.trustroot.v1.TransparencyLogInstance
+	5,  // 13: dev.sigstore.trustroot.v1.SigningConfig.ca_urls:type_name -> dev.sigstore.trustroot.v1.Service
+	5,  // 14: dev.sigstore.trustroot.v1.SigningConfig.oidc_urls:type_name -> dev.sigstore.trustroot.v1.Service
+	5,  // 15: dev.sigstore.trustroot.v1.SigningConfig.rekor_tlog_urls:type_name -> dev.sigstore.trustroot.v1.Service
+	6,  // 16: dev.sigstore.trustroot.v1.SigningConfig.rekor_tlog_config:type_name -> dev.sigstore.trustroot.v1.ServiceConfiguration
+	5,  // 17: dev.sigstore.trustroot.v1.SigningConfig.tsa_urls:type_name -> dev.sigstore.trustroot.v1.Service
+	6,  // 18: dev.sigstore.trustroot.v1.SigningConfig.tsa_config:type_name -> dev.sigstore.trustroot.v1.ServiceConfiguration
+	13, // 19: dev.sigstore.trustroot.v1.Service.valid_for:type_name -> dev.sigstore.common.v1.TimeRange
+	0,  // 20: dev.sigstore.trustroot.v1.ServiceConfiguration.selector:type_name -> dev.sigstore.trustroot.v1.ServiceSelector
+	3,  // 21: dev.sigstore.trustroot.v1.ClientTrustConfig.trusted_root:type_name -> dev.sigstore.trustroot.v1.TrustedRoot
+	4,  // 22: dev.sigstore.trustroot.v1.ClientTrustConfig.signing_config:type_name -> dev.sigstore.trustroot.v1.SigningConfig
+	23, // [23:23] is the sub-list for method output_type
+	23, // [23:23] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_sigstore_trustroot_proto_init() }

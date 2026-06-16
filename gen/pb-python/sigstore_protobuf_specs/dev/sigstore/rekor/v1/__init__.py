@@ -86,6 +86,20 @@ class InclusionProof(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
+class AdditionalSignedEntryTimestamp(betterproto.Message):
+    """
+    AdditionalSignedEntryTimestamp pairs a signed entry timestamp with the
+     log ID of the signer that produced it, enabling direct verifier lookup.
+    """
+
+    log_id: "__common_v1__.LogId" = betterproto.message_field(1)
+    """The unique identifier of the log that produced this SET."""
+
+    signed_entry_timestamp: bytes = betterproto.bytes_field(2)
+    """The signed entry timestamp bytes."""
+
+
+@dataclass(eq=False, repr=False)
 class InclusionPromise(betterproto.Message):
     """
     The inclusion promise is calculated by Rekor. It's calculated as a
@@ -101,6 +115,13 @@ class InclusionPromise(betterproto.Message):
     """
 
     signed_entry_timestamp: bytes = betterproto.bytes_field(1)
+    additional_signed_entry_timestamps: List["AdditionalSignedEntryTimestamp"] = (
+        betterproto.message_field(2)
+    )
+    """
+    Additional signed entry timestamps from hybrid-mode transparency logs.
+     Each entry pairs a SET with the log ID of the signer that produced it.
+    """
 
 
 @dataclass(eq=False, repr=False)
@@ -178,4 +199,6 @@ class TransparencyLogEntry(betterproto.Message):
 
 
 rebuild_dataclass(InclusionProof)  # type: ignore
+rebuild_dataclass(AdditionalSignedEntryTimestamp)  # type: ignore
+rebuild_dataclass(InclusionPromise)  # type: ignore
 rebuild_dataclass(TransparencyLogEntry)  # type: ignore

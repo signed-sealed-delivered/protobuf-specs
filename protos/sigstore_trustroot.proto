@@ -176,6 +176,16 @@ message TrustedRoot {
         repeated TransparencyLogInstance ctlogs = 4;
         // A set of trusted timestamping authorities.
         repeated CertificateAuthority timestamp_authorities = 5;
+        // Extended set of trusted Rekor instances whose signing algorithms may
+        // not be recognised by older clients. Clients that do not support the
+        // algorithm of an entry SHOULD log a warning and skip that entry.
+        // Older clients that do not know this field will ignore it entirely,
+        // preserving backwards compatibility.
+        repeated TransparencyLogInstance extended_tlogs = 6;
+        // Extended set of trusted CT log instances whose signing algorithms may
+        // not be recognised by older clients. Same skip-and-warn semantics as
+        // extended_tlogs.
+        repeated TransparencyLogInstance extended_ctlogs = 7;
 }
 
 

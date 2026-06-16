@@ -72,6 +72,24 @@ pub struct InclusionProof {
     #[prost(message, optional, tag = "5")]
     pub checkpoint: ::core::option::Option<Checkpoint>,
 }
+/// AdditionalSignedEntryTimestamp pairs a signed entry timestamp with the
+/// log ID of the signer that produced it, enabling direct verifier lookup.
+#[derive(
+    sigstore_protobuf_specs_derive::Deserialize_proto,
+    sigstore_protobuf_specs_derive::Serialize_proto
+)]
+#[derive(::prost_reflect::ReflectMessage)]
+#[prost_reflect(message_name = "dev.sigstore.rekor.v1.AdditionalSignedEntryTimestamp")]
+#[prost_reflect(file_descriptor_set_bytes = "crate::FILE_DESCRIPTOR_SET_BYTES")]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct AdditionalSignedEntryTimestamp {
+    /// The unique identifier of the log that produced this SET.
+    #[prost(message, optional, tag = "1")]
+    pub log_id: ::core::option::Option<super::super::common::v1::LogId>,
+    /// The signed entry timestamp bytes.
+    #[prost(bytes = "vec", tag = "2")]
+    pub signed_entry_timestamp: ::prost::alloc::vec::Vec<u8>,
+}
 /// The inclusion promise is calculated by Rekor. It's calculated as a
 /// signature over a canonical JSON serialization of the persisted entry, the
 /// log ID, log index and the integration timestamp.
@@ -89,10 +107,16 @@ pub struct InclusionProof {
 #[derive(::prost_reflect::ReflectMessage)]
 #[prost_reflect(message_name = "dev.sigstore.rekor.v1.InclusionPromise")]
 #[prost_reflect(file_descriptor_set_bytes = "crate::FILE_DESCRIPTOR_SET_BYTES")]
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct InclusionPromise {
     #[prost(bytes = "vec", tag = "1")]
     pub signed_entry_timestamp: ::prost::alloc::vec::Vec<u8>,
+    /// Additional signed entry timestamps from hybrid-mode transparency logs.
+    /// Each entry pairs a SET with the log ID of the signer that produced it.
+    #[prost(message, repeated, tag = "2")]
+    pub additional_signed_entry_timestamps: ::prost::alloc::vec::Vec<
+        AdditionalSignedEntryTimestamp,
+    >,
 }
 /// TransparencyLogEntry captures all the details required from Rekor to
 /// reconstruct an entry, given that the payload is provided via other means.
@@ -109,7 +133,7 @@ pub struct InclusionPromise {
 #[derive(::prost_reflect::ReflectMessage)]
 #[prost_reflect(message_name = "dev.sigstore.rekor.v1.TransparencyLogEntry")]
 #[prost_reflect(file_descriptor_set_bytes = "crate::FILE_DESCRIPTOR_SET_BYTES")]
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TransparencyLogEntry {
     /// The global index of the entry, used when querying the log by index.
     #[prost(int64, tag = "1")]
