@@ -1,11 +1,11 @@
-FROM golang:1.25.4-alpine@sha256:d3f0cf7723f3429e3f9ed846243970b20a2de7bae6a5b66fc5914e228d831bbb AS go-builder
+FROM golang:1.26.4-alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS go-builder
 
 ADD hack/go/go.* tools/
 
 # the specific versions of these tools are in hack/go.mod so that Dependabot can bump them for updates
 RUN cd tools && GOBIN=/go/tools go install tool
 
-FROM gcr.io/distroless/static-debian13:nonroot@sha256:423ba16a9ec162509175cb6904f703d3c8a5a3a58cff9b0b4fb2684bb74162c5
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:963fa6c544fe5ce420f1f54fb88b6fb01479f054c8056d0f74cc2c6000df5240
 
 COPY --from=go-builder /go/tools/protoc-* /usr/local/bin/
 COPY --from=protoc-base:go /protobuf/bin/protoc /usr/local/bin/
